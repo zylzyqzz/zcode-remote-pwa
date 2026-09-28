@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#0f1115">
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
-<title>ZCode 手机遥控</title>
-<link rel="manifest" href="./manifest.webmanifest?v=2">
+<title>ZCode</title>
+<link rel="manifest" href="./manifest.webmanifest?v=3">
 <link rel="icon" href="./icon-192-v2.png">
 <link rel="apple-touch-icon" href="./icon-192-v2.png">
 <style>
@@ -57,12 +57,7 @@
   /* 迷你窗的点击层：点它展开 */
   #miniHit { position: fixed; display: none; z-index: 12; border-radius: 14px; }
   body.mini #miniHit { display: block; }
-  #miniTag {
-    position: fixed; display: none; z-index: 13;
-    padding: 3px 8px; border-radius: 8px; font-size: 11px; color: #dfe6ee;
-    background: rgba(15,17,21,.75); border: 1px solid rgba(255,255,255,.14);
-  }
-  body.mini #miniTag { display: block; }
+  #miniTag { display: none; }
   /* 展开态右上角小按钮排 */
   #topChips {
     position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 8px;
@@ -147,7 +142,6 @@
 <div id="app">
   <iframe id="frame" title="remote" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
   <div id="miniHit" title="点击展开任务窗口"></div>
-  <div id="miniTag">任务 · 点按展开</div>
   <div id="topChips">
     <button id="chipPic" title="传图">📷</button>
     <button id="chipMin" title="缩小到右上角">–</button>
@@ -194,7 +188,7 @@
   var setup = $('setup'), app = $('app'), frame = $('frame'),
       loading = $('loading'), sheet = $('sheet'), mask = $('mask'),
       cam = $('cam'), video = $('video'), toastEl = $('toast'),
-      miniHit = $('miniHit'), miniTag = $('miniTag');
+      miniHit = $('miniHit');
 
   function toast(msg) {
     toastEl.textContent = msg;
@@ -213,14 +207,14 @@
   function getSaved() { return localStorage.getItem(KEY_URL) || ''; }
 
   /* ---------- 迷你窗 / 展开态 ---------- */
-  var MINI_W = 118;                       // 迷你窗宽度(px)
+  var MINI_W = 84;                        // 迷你窗宽度(px)，贴右
   var isMini = false;
 
   function layoutMini() {
-    var k = MINI_W / window.innerWidth;   // 等比缩到宽度=118
+    var k = MINI_W / window.innerWidth;   // 等比缩到宽度=84
     var mh = Math.round(window.innerHeight * k);
-    var mtop = Math.max(6, 8 + (window.safeAreaTop || 0));
-    var left = window.innerWidth - MINI_W - 8;
+    var mtop = 6;
+    var left = window.innerWidth - MINI_W - 5;
     frame.style.width = window.innerWidth + 'px';
     frame.style.height = window.innerHeight + 'px';
     frame.style.transform = 'scale(' + k + ')';
@@ -231,8 +225,6 @@
     miniHit.style.top = (mtop - 2) + 'px';
     miniHit.style.width = (MINI_W + 4) + 'px';
     miniHit.style.height = (mh + 4) + 'px';
-    miniTag.style.left = (left - 2) + 'px';
-    miniTag.style.top = (mtop + mh + 4) + 'px';
   }
 
   function setMini(on) {
