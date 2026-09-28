@@ -153,6 +153,9 @@
 <div id="sheet">
   <div class="row2">
     <button class="btn" id="btnScan2" style="margin-top:10px">📷 重新扫码</button>
+    <button class="btn" id="btnPaste2" style="margin-top:10px">📋 粘贴链接</button>
+  </div>
+  <div class="row2">
     <button class="btn" id="btnSendPic" style="margin-top:10px">📷 传图</button>
   </div>
   <h3 style="margin-top:16px">会话页缩放</h3>
@@ -359,6 +362,16 @@
   $('btnCamClose').addEventListener('click', stopCam);
 
   /* ---------- 粘贴 ---------- */
+  function pasteFlow() {
+    var v = prompt('粘贴电脑端「移动端远程控制」的最新链接：', getSaved());
+    if (v === null) return;
+    var u = validUrl(v);
+    if (!u) { toast('链接格式不对'); return; }
+    save(u);
+    closeSheet();
+    toast('已保存并重新连接');
+  }
+  $('btnPaste2').addEventListener('click', function () { closeSheet(); pasteFlow(); });
   $('btnSave').addEventListener('click', function () {
     var v = validUrl($('urlInput').value);
     if (!v) { toast('请粘贴正确的链接'); return; }
