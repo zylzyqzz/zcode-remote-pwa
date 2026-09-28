@@ -1,4 +1,4 @@
-const CACHE = 'zcode-remote-shell-v3';
+const CACHE = 'zcode-remote-shell-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192-v2.png', './icon-512-v2.png', './icon-maskable-512-v2.png'];
 
 self.addEventListener('install', (e) => {
