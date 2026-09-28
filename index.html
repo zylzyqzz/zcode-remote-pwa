@@ -473,10 +473,10 @@
   var KEY_PATCH = 'zc_patch';
   var patch = $('todoPatch'), btnPatch = $('btnPatch');
   function layoutPatch() {
-    // 盖住 ZCode 页顶部“当前执行步骤”悬浮条的大致区域
+    // 盖住 ZCode 页顶部“当前执行步骤”悬浮条（几乎全屏宽）
     patch.style.top = '150px';
-    patch.style.right = '6px';
-    patch.style.width = '58vw';
+    patch.style.left = '4vw';
+    patch.style.width = '92vw';
     patch.style.height = '56px';
   }
   function applyPatch() {
