@@ -1,6 +1,6 @@
 {
-  "name": "ZCode 手机遥控",
-  "short_name": "ZCode遥控",
+  "name": "ZCode",
+  "short_name": "ZCode",
   "description": "把 ZCode 工作区的移动端远程控制页变成手机桌面 App",
   "lang": "zh-CN",
   "start_url": "./",
