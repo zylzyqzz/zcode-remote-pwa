@@ -73,6 +73,9 @@
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     background: #0f1115; z-index: 5; transition: opacity .3s; flex-direction: column; gap: 14px;
   }
+  /* 遮挡 ZCode 页面自带的“当前执行步骤”悬浮条（跨域无法删除，用同色贴纸盖住） */
+  #todoPatch { position: fixed; display: none; background: #0f1115; border-radius: 14px; z-index: 9; }
+  body.patch-on:not(.mini) #todoPatch { display: block; }
   #loading.hide { opacity: 0; pointer-events: none; }
   .spin {
     width: 34px; height: 34px; border-radius: 50%;
@@ -140,6 +143,7 @@
 <!-- 任务窗口 -->
 <div id="app">
   <iframe id="frame" title="remote" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+  <div id="todoPatch" title=""></div>
   <div id="miniHit" title="点击展开任务窗口"></div>
   <div id="topChips">
     <button id="chipPic" title="传图">📷</button>
@@ -157,6 +161,7 @@
   </div>
   <div class="row2">
     <button class="btn" id="btnSendPic" style="margin-top:10px">📷 传图</button>
+    <button class="btn" id="btnPatch" style="margin-top:10px">🙈 遮任务条：关</button>
   </div>
   <h3 style="margin-top:16px">会话页缩放</h3>
   <div class="row2">
@@ -464,6 +469,33 @@
   $('chipPic').addEventListener('click', pickAndUploadImage);
   $('btnSendPic').addEventListener('click', pickAndUploadImage);
 
+  /* ---------- 🙈 悬浮任务条遮挡（贴纸式，开关记忆） ---------- */
+  var KEY_PATCH = 'zc_patch';
+  var patch = $('todoPatch'), btnPatch = $('btnPatch');
+  function layoutPatch() {
+    // 盖住 ZCode 页顶部“当前执行步骤”悬浮条的大致区域
+    patch.style.top = '150px';
+    patch.style.right = '6px';
+    patch.style.width = '58vw';
+    patch.style.height = '56px';
+  }
+  function applyPatch() {
+    var on = localStorage.getItem(KEY_PATCH) === '1';
+    document.body.classList.toggle('patch-on', on);
+    btnPatch.textContent = on ? '🙈 遮任务条：开' : '🙈 遮任务条：关';
+    if (on) layoutPatch();
+  }
+  btnPatch.addEventListener('click', function () {
+    var on = localStorage.getItem(KEY_PATCH) === '1';
+    localStorage.setItem(KEY_PATCH, on ? '0' : '1');
+    applyPatch();
+    toast(on ? '已取消遮挡（该区域恢复显示）' : '已遮挡悬浮任务条（注意：该区域下方内容也会被盖住）');
+    closeSheet();
+  });
+  window.addEventListener('resize', function () {
+    if (localStorage.getItem(KEY_PATCH) === '1') layoutPatch();
+  });
+
   /* ---------- 会话页等比缩放（50%–100%，记忆，仅完整窗口生效） ---------- */
   var zoomVal = parseFloat(localStorage.getItem(KEY_ZOOM) || '1');
   if (!(zoomVal >= 0.5 && zoomVal <= 1)) zoomVal = 1;
@@ -489,6 +521,7 @@
   /* ---------- 启动 ---------- */
   enter(getSaved());
   applyZoom(zoomVal, false);
+  applyPatch();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(function () {});
