@@ -151,7 +151,10 @@ zcode-remote-pwa/
 ├── icon-maskable-512-v2.png# 自适应图标（Android）
 ├── jsqr.js                 # jsQR 1.4.0（老设备扫码兜底）
 ├── docs/                   # 截图
-└── serve.ps1               # 本地静态服务器（Windows 测试用，可选）
+├── official-icon.png       # ZCode 官方图标原图 1024×1024（生成图标的源素材）
+├── make-icons-v2.ps1       # 图标生成脚本（PowerShell + GDI+ 缩放/自适应）
+├── serve.ps1               # 本地静态服务器（Windows 测试用，可选）
+└── push-via-api.ps1        # GitHub Contents API 部署脚本（token 走环境变量 GH_TOKEN）
 ```
 
 ## 🤝 贡献
