@@ -7,9 +7,9 @@
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <title>ZCode 手机遥控</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icon-192.png">
-<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="manifest" href="./manifest.webmanifest?v=2">
+<link rel="icon" href="./icon-192-v2.png">
+<link rel="apple-touch-icon" href="./icon-192-v2.png">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -41,10 +41,39 @@
   h1 { font-size: 22px; text-align: center; font-weight: 700; }
   .sub { color: #8b93a3; font-size: 14px; line-height: 1.7; text-align: center; margin: 10px 0 22px; }
   .hint { color: #6b7280; font-size: 12.5px; line-height: 1.8; margin-top: 20px; text-align: center; }
-  /* ---------- 主界面 ---------- */
+  /* ---------- 任务窗口 ---------- */
   #app { position: fixed; inset: 0; display: none; }
   #app.show { display: block; }
-  #frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #0f1115; }
+  #frame {
+    position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #0f1115;
+  }
+  body.mini #frame {
+    inset: auto; left: auto; top: auto;
+    border-radius: 14px; box-shadow: 0 4px 22px rgba(0,0,0,.55);
+    outline: 1px solid rgba(255,255,255,.14);
+    transform-origin: 0 0;
+    pointer-events: none;
+  }
+  /* 迷你窗的点击层：点它展开 */
+  #miniHit { position: fixed; display: none; z-index: 12; border-radius: 14px; }
+  body.mini #miniHit { display: block; }
+  #miniTag {
+    position: fixed; display: none; z-index: 13;
+    padding: 3px 8px; border-radius: 8px; font-size: 11px; color: #dfe6ee;
+    background: rgba(15,17,21,.75); border: 1px solid rgba(255,255,255,.14);
+  }
+  body.mini #miniTag { display: block; }
+  /* 展开态右上角小按钮排 */
+  #topChips {
+    position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 8px;
+    display: none; gap: 8px; z-index: 11;
+  }
+  body:not(.mini) #topChips { display: flex; }
+  #topChips button {
+    width: 38px; height: 38px; border-radius: 50%; font-size: 16px; line-height: 1;
+    background: rgba(15,17,21,.6); color: #dfe6ee; backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.12);
+  }
   #loading {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     background: #0f1115; z-index: 5; transition: opacity .3s; flex-direction: column; gap: 14px;
@@ -55,15 +84,7 @@
     border: 3px solid #2a3140; border-top-color: #22c55e; animation: s 1s linear infinite;
   }
   @keyframes s { to { transform: rotate(360deg); } }
-  #gear {
-    position: absolute; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom));
-    width: 42px; height: 42px; border-radius: 50%; z-index: 10;
-    background: rgba(15,17,21,.55); color: #aab2c0; font-size: 19px; backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,.08);
-    touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab;
-  }
-  #gear.dragging { cursor: grabbing; background: rgba(34,197,94,.35); transition: none; }
-  /* ---------- 底部设置面板 ---------- */
+  /* ---------- 底部设置面板（长按迷你窗呼出） ---------- */
   #sheet {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
     background: #151a21; border-top: 1px solid #2a3140;
@@ -113,20 +134,25 @@
 
 <!-- 配置页 -->
 <div id="setup">
-  <img class="logo" src="./icon-192.png" alt="">
+  <img class="logo" src="./icon-192-v2.png" alt="">
   <h1>ZCode 手机遥控</h1>
   <p class="sub">把电脑上 ZCode「移动端远程控制」的链接装进手机桌面。<br>第一次使用：点电脑对话框里的「复制链接」/「刷新二维码」，然后在这里扫码或粘贴。</p>
   <button class="btn primary" id="btnScan">📷 扫码配置（对着电脑上的二维码）</button>
   <input id="urlInput" type="url" placeholder="或粘贴 https://zcode.z.ai/remote/... 链接" autocomplete="off" spellcheck="false">
   <button class="btn" id="btnSave">保存并进入</button>
-  <p class="hint">安装到桌面：Chrome 菜单 → 「添加到主屏幕 / 安装应用」。<br>二维码刷新后，在 ⚙ 里重新扫码即可。</p>
+  <p class="hint">安装到桌面：Chrome 菜单 → 「添加到主屏幕 / 安装应用」。<br>二维码刷新后，长按右上角小窗 → 重新扫码即可。</p>
 </div>
 
-<!-- 主界面 -->
+<!-- 任务窗口 -->
 <div id="app">
   <iframe id="frame" title="remote" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+  <div id="miniHit" title="点击展开任务窗口"></div>
+  <div id="miniTag">任务 · 点按展开</div>
+  <div id="topChips">
+    <button id="chipPic" title="传图">📷</button>
+    <button id="chipMin" title="缩小到右上角">–</button>
+  </div>
   <div id="loading"><div class="spin"></div><div style="color:#8b93a3;font-size:13px" id="loadText">正在连接工作区…</div></div>
-  <button id="gear" title="设置">⚙</button>
 </div>
 
 <!-- 设置面板 -->
@@ -138,6 +164,7 @@
     <button class="btn" id="btnScan2" style="margin-top:10px">📷 重新扫码</button>
     <button class="btn" id="btnPaste2" style="margin-top:10px">📋 粘贴新链接</button>
   </div>
+  <button class="btn primary" id="btnSendPic" style="margin-top:14px">📷 传图到对话（拍照 / 选相册）</button>
   <h3 style="margin-top:16px">会话页缩放（等比）</h3>
   <div class="row2">
     <button class="btn" id="zoomOut" style="margin-top:8px">－ 缩小</button>
@@ -161,17 +188,19 @@
 <script>
 (function () {
   'use strict';
-  var KEY = 'zc_target_url';
+  var KEY_URL = 'zc_target_url';
+  var KEY_ZOOM = 'zc_zoom';
   var $ = function (id) { return document.getElementById(id); };
   var setup = $('setup'), app = $('app'), frame = $('frame'),
       loading = $('loading'), sheet = $('sheet'), mask = $('mask'),
-      cam = $('cam'), video = $('video'), toastEl = $('toast');
+      cam = $('cam'), video = $('video'), toastEl = $('toast'),
+      miniHit = $('miniHit'), miniTag = $('miniTag');
 
   function toast(msg) {
     toastEl.textContent = msg;
     toastEl.classList.add('show');
     clearTimeout(toastEl._t);
-    toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 2200);
+    toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 2600);
   }
 
   function validUrl(v) {
@@ -181,8 +210,52 @@
     } catch (e) { return null; }
   }
 
-  function getSaved() { return localStorage.getItem(KEY) || ''; }
+  function getSaved() { return localStorage.getItem(KEY_URL) || ''; }
 
+  /* ---------- 迷你窗 / 展开态 ---------- */
+  var MINI_W = 118;                       // 迷你窗宽度(px)
+  var isMini = false;
+
+  function layoutMini() {
+    var k = MINI_W / window.innerWidth;   // 等比缩到宽度=118
+    var mh = Math.round(window.innerHeight * k);
+    var mtop = Math.max(6, 8 + (window.safeAreaTop || 0));
+    var left = window.innerWidth - MINI_W - 8;
+    frame.style.width = window.innerWidth + 'px';
+    frame.style.height = window.innerHeight + 'px';
+    frame.style.transform = 'scale(' + k + ')';
+    frame.style.transformOrigin = '0 0';
+    frame.style.left = left + 'px';
+    frame.style.top = mtop + 'px';
+    miniHit.style.left = (left - 2) + 'px';
+    miniHit.style.top = (mtop - 2) + 'px';
+    miniHit.style.width = (MINI_W + 4) + 'px';
+    miniHit.style.height = (mh + 4) + 'px';
+    miniTag.style.left = (left - 2) + 'px';
+    miniTag.style.top = (mtop + mh + 4) + 'px';
+  }
+
+  function setMini(on) {
+    isMini = on;
+    document.body.classList.toggle('mini', on);
+    if (on) {
+      layoutMini();
+    } else {
+      frame.style.left = '0';
+      frame.style.top = '0';
+      frame.style.right = '0';
+      frame.style.bottom = '0';
+      frame.style.width = '100%';
+      frame.style.height = '100%';
+      frame.style.transformOrigin = '0 0';
+      applyZoom(zoomVal, false);          // 恢复用户缩放
+    }
+  }
+  window.addEventListener('resize', function () { if (isMini) layoutMini(); });
+  miniHit.addEventListener('click', function () { setMini(false); });
+  $('chipMin').addEventListener('click', function () { setMini(true); });
+
+  /* ---------- 进入任务 ---------- */
   function enter(url) {
     if (!url) { app.classList.remove('show'); setup.classList.add('show'); return; }
     setup.classList.remove('show');
@@ -191,6 +264,7 @@
     $('loadText').textContent = '正在连接工作区…';
     frame.src = url;
     $('curUrl').textContent = url;
+    setMini(false);                        // 进来先是完整任务窗口
   }
 
   frame.addEventListener('load', function () {
@@ -198,7 +272,7 @@
   });
 
   function save(url, andEnter) {
-    localStorage.setItem(KEY, url);
+    localStorage.setItem(KEY_URL, url);
     if (andEnter !== false) enter(url);
   }
 
@@ -298,69 +372,20 @@
     save(v);
   });
 
-  /* ---------- 面板 ---------- */
+  /* ---------- 设置面板（长按迷你窗呼出） ---------- */
   function openSheet() { $('curUrl').textContent = getSaved(); sheet.classList.add('show'); mask.classList.add('show'); }
   function closeSheet() { sheet.classList.remove('show'); mask.classList.remove('show'); }
   mask.addEventListener('click', closeSheet);
-
-  /* ---------- ⚙ 可拖动悬浮球（点按=设置，拖动=移位并记忆） ---------- */
-  var gear = $('gear');
-  var GS = 42; // 球直径
-  var gearFrac = null;
-  try { gearFrac = JSON.parse(localStorage.getItem('zc_gear_pos') || 'null'); } catch (e) { gearFrac = null; }
-  if (!gearFrac || typeof gearFrac.x !== 'number' || typeof gearFrac.y !== 'number') gearFrac = null;
-
-  function placeGear(fx, fy) {
-    fx = Math.min(0.98, Math.max(0.02, fx));
-    fy = Math.min(0.98, Math.max(0.02, fy));
-    gear.style.left = (fx * (window.innerWidth - GS)) + 'px';
-    gear.style.top = (fy * (window.innerHeight - GS)) + 'px';
-    gear.style.right = 'auto';
-    gear.style.bottom = 'auto';
+  // 长按迷你窗（或右键）呼出设置
+  var lpTimer = null;
+  function miniLongPressStart(e) {
+    lpTimer = setTimeout(function () { lpTimer = null; openSheet(); }, 650);
   }
-  window.addEventListener('resize', function () {
-    if (gearFrac) placeGear(gearFrac.x, gearFrac.y);
-  });
-  if (gearFrac) placeGear(gearFrac.x, gearFrac.y);
-
-  var drag = { on: false, moved: false, sx: 0, sy: 0, ox: 0, oy: 0 };
-  gear.addEventListener('pointerdown', function (e) {
-    drag.on = true; drag.moved = false;
-    drag.sx = e.clientX; drag.sy = e.clientY;
-    var r = gear.getBoundingClientRect();
-    drag.ox = r.left; drag.oy = r.top;
-    try { gear.setPointerCapture(e.pointerId); } catch (err) {}
-    gear.classList.add('dragging');
-  });
-  gear.addEventListener('pointermove', function (e) {
-    if (!drag.on) return;
-    var dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
-    if (!drag.moved && (Math.abs(dx) + Math.abs(dy) > 8)) drag.moved = true;
-    if (drag.moved) {
-      var nx = drag.ox + dx, ny = drag.oy + dy;
-      placeGear(
-        window.innerWidth > GS ? nx / (window.innerWidth - GS) : 0,
-        window.innerHeight > GS ? ny / (window.innerHeight - GS) : 0
-      );
-    }
-  });
-  function endDrag(e) {
-    if (!drag.on) return;
-    drag.on = false;
-    gear.classList.remove('dragging');
-    if (drag.moved) {
-      var r = gear.getBoundingClientRect();
-      gearFrac = {
-        x: r.left / Math.max(1, window.innerWidth - GS),
-        y: r.top / Math.max(1, window.innerHeight - GS)
-      };
-      try { localStorage.setItem('zc_gear_pos', JSON.stringify(gearFrac)); } catch (err) {}
-    } else {
-      openSheet();
-    }
-  }
-  gear.addEventListener('pointerup', endDrag);
-  gear.addEventListener('pointercancel', function () { drag.on = false; gear.classList.remove('dragging'); });
+  function miniLongPressCancel() { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } }
+  miniHit.addEventListener('touchstart', miniLongPressStart, { passive: true });
+  miniHit.addEventListener('touchend', miniLongPressCancel);
+  miniHit.addEventListener('touchmove', miniLongPressCancel);
+  miniHit.addEventListener('contextmenu', function (e) { e.preventDefault(); miniLongPressCancel(); openSheet(); });
   $('btnOpenExt').addEventListener('click', function () {
     var u = getSaved();
     closeSheet();
@@ -368,13 +393,81 @@
   });
   $('btnClear').addEventListener('click', function () {
     if (!confirm('确定清除已保存的链接？')) return;
-    localStorage.removeItem(KEY);
+    localStorage.removeItem(KEY_URL);
+    localStorage.removeItem(KEY_ZOOM);
     closeSheet();
     enter('');
   });
 
-  /* ---------- 会话页等比缩放（50%–100%，记忆） ---------- */
-  var zoomVal = parseFloat(localStorage.getItem('zc_zoom') || '1');
+  /* ---------- 📷 传图到对话：选图/拍照 → 图床 → 复制链接 ---------- */
+  function pickAndUploadImage() {
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.onchange = function () {
+      if (inp.files && inp.files[0]) uploadImage(inp.files[0]);
+    };
+    inp.click();
+  }
+  function uploadImage(file) {
+    toast('正在上传图片（' + Math.max(1, Math.round(file.size / 1024)) + ' KB）…');
+    var hosts = [
+      function () {   // tmpfiles.org（1小时有效）
+        var fd = new FormData();
+        fd.append('file', file, file.name || 'image.jpg');
+        return fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j && j.status === 'success' && j.data && j.data.url)
+              return j.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            throw new Error('tmpfiles failed');
+          });
+      },
+      function () {   // sm.ms 图床
+        var fd = new FormData();
+        fd.append('smfile', file, file.name || 'image.jpg');
+        return fetch('https://sm.ms/api/v2/upload', { method: 'POST', body: fd })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j && j.success && j.data && j.data.url) return j.data.url;
+            throw new Error((j && j.message) || 'sm.ms failed');
+          });
+      },
+      function () {   // catbox.moe（永久）
+        var fd = new FormData();
+        fd.append('reqtype', 'fileupload');
+        fd.append('fileToUpload', file, file.name || 'image.jpg');
+        return fetch('https://catbox.moe/user/api.php', { method: 'POST', body: fd })
+          .then(function (r) { return r.text(); })
+          .then(function (t) {
+            if (/^https?:\/\/files\.catbox\.moe\//.test(t.trim())) return t.trim();
+            throw new Error('catbox failed');
+          });
+      }
+    ];
+    var i = 0;
+    (function next() {
+      if (i >= hosts.length) {
+        toast('❌ 图床都连不上。可先把图发到微信「文件传输助手」，在电脑端保存进工作区。');
+        return;
+      }
+      hosts[i++]().then(function (url) { deliverUrl(url); }).catch(function () { next(); });
+    })();
+  }
+  async function deliverUrl(url) {
+    var msg = '请把这张图片下载到工作区并查看：' + url;
+    try {
+      await navigator.clipboard.writeText(msg);
+      toast('✅ 图片链接已复制！去对话输入框粘贴发送即可');
+    } catch (e) {
+      window.prompt('上传成功！复制下面整段内容，粘贴到对话里发送：', msg);
+    }
+  }
+  $('chipPic').addEventListener('click', pickAndUploadImage);
+  $('btnSendPic').addEventListener('click', pickAndUploadImage);
+
+  /* ---------- 会话页等比缩放（50%–100%，记忆，仅完整窗口生效） ---------- */
+  var zoomVal = parseFloat(localStorage.getItem(KEY_ZOOM) || '1');
   if (!(zoomVal >= 0.5 && zoomVal <= 1)) zoomVal = 1;
   function applyZoom(v, keep) {
     zoomVal = Math.min(1, Math.max(0.5, Math.round(v * 20) / 20));
@@ -389,15 +482,15 @@
       frame.style.height = (100 / zoomVal) + '%';
     }
     $('zoomValBtn').textContent = Math.round(zoomVal * 100) + '%';
-    if (keep !== false) { try { localStorage.setItem('zc_zoom', String(zoomVal)); } catch (err) {} }
+    if (keep !== false) { try { localStorage.setItem(KEY_ZOOM, String(zoomVal)); } catch (err) {} }
   }
   $('zoomOut').addEventListener('click', function () { applyZoom(zoomVal - 0.05); });
   $('zoomIn').addEventListener('click', function () { applyZoom(zoomVal + 0.05); });
   $('zoomValBtn').addEventListener('click', function () { applyZoom(1); });
-  applyZoom(zoomVal, false);
 
   /* ---------- 启动 ---------- */
   enter(getSaved());
+  applyZoom(zoomVal, false);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(function () {});
