@@ -267,7 +267,7 @@
   } catch (e) {}
 
   /* ---------- 扫码 ---------- */
-  var stream = null, rafId = null, detector = null, canvas = null;
+  var stream = null, rafId = null, detector = null, canvas = null, detFails = 0;
 
   function stopCam() {
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
@@ -291,7 +291,11 @@
         detector.detect(video).then(function (codes) {
           if (codes && codes.length) return onQR(codes[0].rawValue);
           rafId = requestAnimationFrame(step);
-        }).catch(function () { rafId = requestAnimationFrame(step); });
+        }).catch(function () {
+          detFails++;
+          if (detFails > 8 && window.jsQR) detector = null;   // 检测器异常时降级到 jsQR
+          rafId = requestAnimationFrame(step);
+        });
       } else if (window.jsQR) {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
           canvas = canvas || document.createElement('canvas');
@@ -315,10 +319,10 @@
 
   async function startScan() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      toast('此浏览器不支持摄像头，请用粘贴方式'); return;
+      toast('此浏览器不支持摄像头（电脑上没有摄像头，请用手机扫码，或粘贴链接）'); return;
     }
     if ('BarcodeDetector' in window) {
-      try { detector = new window.BarcodeDetector({ formats: ['qr_code'] }); }
+      try { detector = new window.BarcodeDetector({ formats: ['qr_code'] }); detFails = 0; }
       catch (e) { detector = null; }
     }
     try {
@@ -327,7 +331,14 @@
         audio: false
       });
     } catch (e) {
-      toast('摄像头打开失败（检查权限），可用粘贴方式'); return;
+      var name = (e && e.name) || '';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError')
+        toast('相机权限被拒绝：点地址栏左侧 🔒 → 权限 → 相机 → 允许，再重试');
+      else if (name === 'NotFoundError' || name === 'OverconstrainedError')
+        toast('没找到可用摄像头（电脑端没有摄像头，请用手机扫码，或粘贴链接）');
+      else
+        toast('摄像头打开失败：' + (name || '未知错误') + '，可用粘贴方式');
+      return;
     }
     video.srcObject = stream;
     await video.play().catch(function () {});
