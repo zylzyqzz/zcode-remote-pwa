@@ -207,14 +207,14 @@
   function getSaved() { return localStorage.getItem(KEY_URL) || ''; }
 
   /* ---------- 迷你窗 / 展开态 ---------- */
-  var MINI_W = 84;                        // 迷你窗宽度(px)，贴右
+  var MINI_W = 118;                       // 迷你窗宽度(px)
   var isMini = false;
 
   function layoutMini() {
-    var k = MINI_W / window.innerWidth;   // 等比缩到宽度=84
+    var k = MINI_W / window.innerWidth;   // 等比缩到宽度=118
     var mh = Math.round(window.innerHeight * k);
-    var mtop = 6;
-    var left = window.innerWidth - MINI_W - 5;
+    var mtop = Math.max(6, 8 + (window.safeAreaTop || 0));
+    var left = window.innerWidth - MINI_W - 8;
     frame.style.width = window.innerWidth + 'px';
     frame.style.height = window.innerHeight + 'px';
     frame.style.transform = 'scale(' + k + ')';
