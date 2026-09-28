@@ -134,6 +134,7 @@
   <button class="btn primary" id="btnScan">📷 扫码配置</button>
   <input id="urlInput" type="url" placeholder="或粘贴远程控制链接" autocomplete="off" spellcheck="false">
   <button class="btn" id="btnSave">保存并进入</button>
+  <button class="btn primary" id="btnBack" style="display:none">↩ 返回任务窗口</button>
 </div>
 
 <!-- 任务窗口 -->
@@ -242,7 +243,13 @@
 
   /* ---------- 进入任务 ---------- */
   function enter(url) {
-    if (!url) { app.classList.remove('show'); setup.classList.add('show'); return; }
+    if (!url) {
+      app.classList.remove('show');
+      setup.classList.add('show');
+      // 有已保存链接时给一条“返回任务窗口”的退路，避免卡在配对页
+      $('btnBack').style.display = getSaved() ? 'block' : 'none';
+      return;
+    }
     setup.classList.remove('show');
     app.classList.add('show');
     loading.classList.remove('hide');
@@ -356,6 +363,10 @@
     var v = validUrl($('urlInput').value);
     if (!v) { toast('请粘贴正确的链接'); return; }
     save(v);
+  });
+  $('btnBack').addEventListener('click', function () {
+    var u = getSaved();
+    if (u) enter(u);
   });
 
   /* ---------- 设置面板（长按迷你窗呼出） ---------- */
