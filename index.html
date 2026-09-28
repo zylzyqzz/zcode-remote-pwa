@@ -60,7 +60,9 @@
     width: 42px; height: 42px; border-radius: 50%; z-index: 10;
     background: rgba(15,17,21,.55); color: #aab2c0; font-size: 19px; backdrop-filter: blur(6px);
     border: 1px solid rgba(255,255,255,.08);
+    touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab;
   }
+  #gear.dragging { cursor: grabbing; background: rgba(34,197,94,.35); transition: none; }
   /* ---------- 底部设置面板 ---------- */
   #sheet {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -135,6 +137,12 @@
   <div class="row2">
     <button class="btn" id="btnScan2" style="margin-top:10px">📷 重新扫码</button>
     <button class="btn" id="btnPaste2" style="margin-top:10px">📋 粘贴新链接</button>
+  </div>
+  <h3 style="margin-top:16px">会话页缩放（等比）</h3>
+  <div class="row2">
+    <button class="btn" id="zoomOut" style="margin-top:8px">－ 缩小</button>
+    <button class="btn" id="zoomValBtn" style="margin-top:8px; min-width:76px">100%</button>
+    <button class="btn" id="zoomIn" style="margin-top:8px">＋ 放大</button>
   </div>
   <button class="btn" id="btnOpenExt">↗ 在浏览器中打开（直连）</button>
   <button class="btn danger" id="btnClear">清除已保存的链接</button>
@@ -293,8 +301,66 @@
   /* ---------- 面板 ---------- */
   function openSheet() { $('curUrl').textContent = getSaved(); sheet.classList.add('show'); mask.classList.add('show'); }
   function closeSheet() { sheet.classList.remove('show'); mask.classList.remove('show'); }
-  $('gear').addEventListener('click', openSheet);
   mask.addEventListener('click', closeSheet);
+
+  /* ---------- ⚙ 可拖动悬浮球（点按=设置，拖动=移位并记忆） ---------- */
+  var gear = $('gear');
+  var GS = 42; // 球直径
+  var gearFrac = null;
+  try { gearFrac = JSON.parse(localStorage.getItem('zc_gear_pos') || 'null'); } catch (e) { gearFrac = null; }
+  if (!gearFrac || typeof gearFrac.x !== 'number' || typeof gearFrac.y !== 'number') gearFrac = null;
+
+  function placeGear(fx, fy) {
+    fx = Math.min(0.98, Math.max(0.02, fx));
+    fy = Math.min(0.98, Math.max(0.02, fy));
+    gear.style.left = (fx * (window.innerWidth - GS)) + 'px';
+    gear.style.top = (fy * (window.innerHeight - GS)) + 'px';
+    gear.style.right = 'auto';
+    gear.style.bottom = 'auto';
+  }
+  window.addEventListener('resize', function () {
+    if (gearFrac) placeGear(gearFrac.x, gearFrac.y);
+  });
+  if (gearFrac) placeGear(gearFrac.x, gearFrac.y);
+
+  var drag = { on: false, moved: false, sx: 0, sy: 0, ox: 0, oy: 0 };
+  gear.addEventListener('pointerdown', function (e) {
+    drag.on = true; drag.moved = false;
+    drag.sx = e.clientX; drag.sy = e.clientY;
+    var r = gear.getBoundingClientRect();
+    drag.ox = r.left; drag.oy = r.top;
+    try { gear.setPointerCapture(e.pointerId); } catch (err) {}
+    gear.classList.add('dragging');
+  });
+  gear.addEventListener('pointermove', function (e) {
+    if (!drag.on) return;
+    var dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+    if (!drag.moved && (Math.abs(dx) + Math.abs(dy) > 8)) drag.moved = true;
+    if (drag.moved) {
+      var nx = drag.ox + dx, ny = drag.oy + dy;
+      placeGear(
+        window.innerWidth > GS ? nx / (window.innerWidth - GS) : 0,
+        window.innerHeight > GS ? ny / (window.innerHeight - GS) : 0
+      );
+    }
+  });
+  function endDrag(e) {
+    if (!drag.on) return;
+    drag.on = false;
+    gear.classList.remove('dragging');
+    if (drag.moved) {
+      var r = gear.getBoundingClientRect();
+      gearFrac = {
+        x: r.left / Math.max(1, window.innerWidth - GS),
+        y: r.top / Math.max(1, window.innerHeight - GS)
+      };
+      try { localStorage.setItem('zc_gear_pos', JSON.stringify(gearFrac)); } catch (err) {}
+    } else {
+      openSheet();
+    }
+  }
+  gear.addEventListener('pointerup', endDrag);
+  gear.addEventListener('pointercancel', function () { drag.on = false; gear.classList.remove('dragging'); });
   $('btnOpenExt').addEventListener('click', function () {
     var u = getSaved();
     closeSheet();
@@ -306,6 +372,29 @@
     closeSheet();
     enter('');
   });
+
+  /* ---------- 会话页等比缩放（50%–100%，记忆） ---------- */
+  var zoomVal = parseFloat(localStorage.getItem('zc_zoom') || '1');
+  if (!(zoomVal >= 0.5 && zoomVal <= 1)) zoomVal = 1;
+  function applyZoom(v, keep) {
+    zoomVal = Math.min(1, Math.max(0.5, Math.round(v * 20) / 20));
+    if (zoomVal === 1) {
+      frame.style.transform = '';
+      frame.style.width = '100%';
+      frame.style.height = '100%';
+    } else {
+      frame.style.transformOrigin = '0 0';
+      frame.style.transform = 'scale(' + zoomVal + ')';
+      frame.style.width = (100 / zoomVal) + '%';
+      frame.style.height = (100 / zoomVal) + '%';
+    }
+    $('zoomValBtn').textContent = Math.round(zoomVal * 100) + '%';
+    if (keep !== false) { try { localStorage.setItem('zc_zoom', String(zoomVal)); } catch (err) {} }
+  }
+  $('zoomOut').addEventListener('click', function () { applyZoom(zoomVal - 0.05); });
+  $('zoomIn').addEventListener('click', function () { applyZoom(zoomVal + 0.05); });
+  $('zoomValBtn').addEventListener('click', function () { applyZoom(1); });
+  applyZoom(zoomVal, false);
 
   /* ---------- 启动 ---------- */
   enter(getSaved());
