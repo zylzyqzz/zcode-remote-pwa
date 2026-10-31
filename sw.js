@@ -1,5 +1,5 @@
-const CACHE = 'zcode-remote-shell-v6';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192-v2.png', './icon-512-v2.png', './icon-maskable-512-v2.png'];
+const CACHE = 'zcode-remote-shell-v7';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192-v3.png', './icon-512-v3.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

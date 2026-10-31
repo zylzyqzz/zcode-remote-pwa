@@ -17,7 +17,7 @@ function Get-FileSha([string]$path) {
 }
 
 # 1) 推送 / 更新文件
-$files = @('README.md', 'serve.ps1', 'make-icons-v2.ps1', 'official-icon.png', 'push-via-api.ps1')
+$files = @('README.md', 'serve.ps1', 'make-icons.py', 'official-icon.png', 'push-via-api.ps1')
 foreach ($f in $files) {
   $bytes = [IO.File]::ReadAllBytes((Join-Path $dir ($f -replace '/', '\')))
   $content = [Convert]::ToBase64String($bytes)
