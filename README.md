@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="icon-192-v2.png" width="96" alt="ZCode Remote PWA">
+<img src="icon-192-v3.png" width="96" alt="ZCode Remote PWA">
 
 # ZCode Remote PWA
 
@@ -147,13 +147,12 @@ zcode-remote-pwa/
 ├── index.html              # 壳主体：配置页 / 任务窗 / 迷你窗 / 设置 / 传图
 ├── manifest.webmanifest    # PWA 清单（名称、图标、独立窗口）
 ├── sw.js                   # Service Worker（壳离线缓存，跨域页面不缓存）
-├── icon-192-v2.png         # 官方 Z 图标 192
-├── icon-512-v2.png         # 官方 Z 图标 512
-├── icon-maskable-512-v2.png# 自适应图标（Android）
+├── icon-192-v3.png         # 官方 Z 图标 192（满版不透明）
+├── icon-512-v3.png         # 官方 Z 图标 512（满版不透明，any + maskable 共用）
 ├── jsqr.js                 # jsQR 1.4.0（老设备扫码兜底）
 ├── docs/                   # 截图
 ├── official-icon.png       # ZCode 官方图标原图 1024×1024（生成图标的源素材）
-├── make-icons-v2.ps1       # 图标生成脚本（PowerShell + GDI+ 缩放/自适应）
+├── make-icons.py           # 图标生成脚本（纯标准库，裁边 + 满版铺底 + 安全区）
 ├── serve.ps1               # 本地静态服务器（Windows 测试用，可选）
 └── push-via-api.ps1        # GitHub Contents API 部署脚本（token 走环境变量 GH_TOKEN）
 ```
